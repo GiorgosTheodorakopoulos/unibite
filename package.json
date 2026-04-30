@@ -1,0 +1,20 @@
+{
+  "name": "unibite",
+  "version": "1.0.0",
+  "description": "Φοιτητική πλατφόρμα διαμοιρασμού φαγητού",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server/index.js",
+    "dev": "nodemon --exec \"node --experimental-sqlite\" server/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+"express": "^4.22.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "sql.js": "^1.14.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

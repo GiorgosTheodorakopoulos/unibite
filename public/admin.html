@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard – UniBite</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .leaderboard-card { background:#fff; border-radius:14px; box-shadow:var(--shadow); padding:1.25rem; margin-bottom:1rem; }
+    .top-donor { display:flex; align-items:center; gap:1rem; }
+    .top-donor-avatar { font-size:3rem; }
+    .top-donor-name { font-size:1.3rem; font-weight:700; }
+    .top-donor-count { color:var(--text-muted); font-size:.9rem; }
+    .top-listings-table th, .top-listings-table td { padding:.6rem .75rem; }
+  </style>
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div class="page-container">
+    <h1 class="page-title">🛡️ Admin Dashboard</h1>
+
+    <!-- Stats -->
+    <h2 class="section-title">Στατιστικά Πλατφόρμας</h2>
+    <div class="stats-grid" id="statsGrid"><div class="spinner"></div></div>
+
+    <!-- Leaderboard -->
+    <h2 class="section-title">🏆 Leaderboard</h2>
+
+    <div class="leaderboard-card">
+      <h3 style="margin-bottom:.75rem">🥇 Top Donor – Καλύτερος Πάροχος</h3>
+      <div id="topDonor"><div class="spinner"></div></div>
+    </div>
+
+    <div class="leaderboard-card">
+      <h3 style="margin-bottom:.75rem">⭐ Καλύτερα Αξιολογημένα Γεύματα</h3>
+      <div id="topRated"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = requireAuth(['admin']);
+      if (!user) return;
+      renderNavbar('admin');
+      await Promise.all([loadStats(), loadLeaderboard()]);
+    });
+
+    async function loadStats() {
+      try {
+        const s = await API.get('/api/admin/stats');
+        document.getElementById('statsGrid').innerHTML = `
+          <div class="stat-card"><div class="stat-value">${s.total_portions_month}</div><div class="stat-label">Μερίδες τελευταίου μήνα</div></div>
+          <div class="stat-card"><div class="stat-value">${s.active_listings}</div><div class="stat-label">Ενεργές αγγελίες</div></div>
+          <div class="stat-card"><div class="stat-value">${s.total_users}</div><div class="stat-label">Εγγεγραμμένοι χρήστες</div></div>
+        `;
+      } catch(e) {
+        document.getElementById('statsGrid').innerHTML = '<p class="hint">Σφάλμα φόρτωσης.</p>';
+      }
+    }
+
+    async function loadLeaderboard() {
+      try {
+        const { top_donor, top_rated_listings } = await API.get('/api/admin/leaderboard');
+
+        if (top_donor) {
+          document.getElementById('topDonor').innerHTML = `
+            <div class="top-donor">
+              <div class="top-donor-avatar">👨‍🍳</div>
+              <div>
+                <div class="top-donor-name">@${top_donor.username}</div>
+                <div class="top-donor-count">${top_donor.count} μερίδες που μοιράστηκαν</div>
+              </div>
+            </div>`;
+        } else {
+          document.getElementById('topDonor').innerHTML = '<p class="hint">Δεν υπάρχουν δεδομένα ακόμα.</p>';
+        }
+
+        if (top_rated_listings.length) {
+          document.getElementById('topRated').innerHTML = `
+            <div class="table-wrap">
+            <table class="top-listings-table">
+              <thead><tr><th>#</th><th>Φαγητό</th><th>Μάγειρας</th><th>Μ.Ο. Βαθμολογίας</th><th>Αξιολογήσεις</th></tr></thead>
+              <tbody>
+                ${top_rated_listings.map((l, i) => `
+                  <tr>
+                    <td>${['🥇','🥈','🥉'][i] || i+1}</td>
+                    <td>${escHtml(l.title)}</td>
+                    <td>@${escHtml(l.cook_username)}</td>
+                    <td>${Number(l.avg_score).toFixed(1)} / 5 ${'★'.repeat(Math.round(l.avg_score))}</td>
+                    <td>${l.rating_count}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table></div>`;
+        } else {
+          document.getElementById('topRated').innerHTML = '<p class="hint">Δεν υπάρχουν αξιολογήσεις ακόμα.</p>';
+        }
+      } catch(e) {
+        document.getElementById('topDonor').innerHTML = '<p class="hint">Σφάλμα.</p>';
+      }
+    }
+
+    function escHtml(str) {
+      return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>

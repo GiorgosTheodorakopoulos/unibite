@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Νέα Αγγελία – UniBite</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/create-listing.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div class="page-container">
+    <h1 class="page-title">+ Νέα Αγγελία Φαγητού</h1>
+
+    <div class="card">
+      <form id="createListingForm" novalidate>
+
+        <div class="form-group">
+          <label for="title">Τίτλος <span class="required">*</span></label>
+          <input class="form-control" type="text" id="title" placeholder="π.χ. Σπιτική μακαρονάδα με κιμά" required />
+        </div>
+
+        <div class="form-group">
+          <label for="photo">Φωτογραφία <span class="hint-inline">(προαιρετικά)</span></label>
+          <input class="form-control" type="file" id="photo" accept="image/*" />
+          <div id="photoPreview" class="photo-preview" style="display:none">
+            <img id="photoImg" src="" alt="preview" />
+            <button type="button" id="removePhoto" class="btn btn-secondary btn-sm">✕ Αφαίρεση</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="portions">Μερίδες <span class="required">*</span></label>
+            <input class="form-control" type="number" id="portions" min="1" max="50" value="2" required />
+          </div>
+          <div class="form-group">
+            <label for="pickupTime">Ώρα Παραλαβής <span class="required">*</span></label>
+            <input class="form-control" type="time" id="pickupTime" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="location">Σημείο Παράδοσης <span class="required">*</span></label>
+          <input class="form-control" type="text" id="location" placeholder="π.χ. Κτίριο Α΄ Πολυτεχνείου, Αίθουσα 101" required />
+          <p class="hint">Κάνε κλικ στον χάρτη για ακριβές σημείο.</p>
+        </div>
+
+        <!-- Map picker -->
+        <div class="form-group">
+          <div id="locationMap" class="location-map"></div>
+          <input type="hidden" id="lat" />
+          <input type="hidden" id="lng" />
+          <p id="coordsLabel" class="hint" style="margin-top:.3rem">Δεν έχει επιλεγεί σημείο χάρτη.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Σημειώσεις</label>
+          <textarea class="form-control" id="notes" rows="3" placeholder="Περιγραφή, συστατικά, ιδιαιτερότητες..."></textarea>
+        </div>
+
+        <!-- Allergens -->
+        <div class="form-group">
+          <label class="section-label">Αλλεργιογόνα</label>
+          <p class="hint">Επισήμανε όσα αλλεργιογόνα <strong>περιέχει</strong> το φαγητό σου.</p>
+          <div class="allergens-grid" id="allergensGrid">
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="gluten" /><span class="allergen-icon">🌾</span><span class="allergen-name">Γλουτένη<small>σιτάρι, κριθάρι</small></span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="crustaceans" /><span class="allergen-icon">🦐</span><span class="allergen-name">Καρκινοειδή<small>γαρίδα, καβούρι</small></span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="eggs" /><span class="allergen-icon">🥚</span><span class="allergen-name">Αυγά</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="fish" /><span class="allergen-icon">🐟</span><span class="allergen-name">Ψάρι</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="peanuts" /><span class="allergen-icon">🥜</span><span class="allergen-name">Φιστίκια</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="soybeans" /><span class="allergen-icon">🫘</span><span class="allergen-name">Σόγια</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="milk" /><span class="allergen-icon">🥛</span><span class="allergen-name">Γάλα<small>λακτόζη</small></span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="nuts" /><span class="allergen-icon">🌰</span><span class="allergen-name">Ξηροί Καρποί<small>αμύγδαλα, καρύδια</small></span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="celery" /><span class="allergen-icon">🥬</span><span class="allergen-name">Σέλινο</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="mustard" /><span class="allergen-icon">🌿</span><span class="allergen-name">Μουστάρδα</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="sesame" /><span class="allergen-icon">🌱</span><span class="allergen-name">Σουσάμι</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="sulphites" /><span class="allergen-icon">🍷</span><span class="allergen-name">Θειώδη<small>κρασί, ξερά φρ.</small></span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="lupin" /><span class="allergen-icon">🌼</span><span class="allergen-name">Λούπινο</span></label>
+            <label class="allergen-item"><input type="checkbox" name="allergens" value="molluscs" /><span class="allergen-icon">🐙</span><span class="allergen-name">Μαλάκια<small>χταπόδι, μύδια</small></span></label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="submitBtn">🚀 Δημοσίευση Αγγελίας</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/create-listing.js"></script>
+</body>
+</html>

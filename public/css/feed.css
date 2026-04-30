@@ -1,0 +1,119 @@
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+.view-toggle { display: flex; gap: .5rem; }
+.view-toggle .btn.active { background: var(--primary); color: #fff; }
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-bottom: 1.25rem;
+}
+.filter-bar .form-control {
+  flex: 1 1 160px;
+  max-width: 280px;
+}
+
+/* ── Listing cards grid ── */
+.listings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.listing-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .15s, box-shadow .15s;
+}
+.listing-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+.listing-card.inactive { opacity: .65; }
+
+.listing-card-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: #f0e8dc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+}
+.listing-card-img img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.listing-card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+
+.listing-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dark);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.listing-card-meta {
+  font-size: .8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
+}
+
+.listing-card-allergens { margin-top: .2rem; }
+
+.listing-card-footer {
+  padding: .75rem 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.portions-badge {
+  background: #fff3e0;
+  color: #c67c00;
+  padding: .2rem .55rem;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+/* Map popup */
+.leaflet-popup-content { font-size: .88rem; min-width: 200px; }
+.popup-title { font-weight: 700; margin-bottom: .4rem; color: var(--dark); }
+.popup-btn {
+  display: block;
+  width: 100%;
+  margin-top: .6rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: .4rem;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 600;
+}
+.popup-btn:hover { background: var(--primary-dark); }
+.popup-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 500px) {
+  .listings-grid { grid-template-columns: 1fr; }
+  .filter-bar .form-control { max-width: 100%; }
+}
