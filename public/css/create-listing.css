@@ -7,6 +7,14 @@
 }
 @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
 
+.time-range {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.time-range .form-control { flex: 1; }
+.time-range-sep { font-weight: 600; color: var(--text-muted); flex-shrink: 0; }
+
 /* Photo preview */
 .photo-preview {
   margin-top: .5rem;

@@ -95,8 +95,10 @@ function listingCardHTML(l, user) {
     actionBtn = `<a href="/login.html" class="btn btn-secondary btn-sm">Σύνδεση</a>`;
   } else if (user.role === 'admin') {
     actionBtn = '';
-  } else if (l.user_id === user.id) {
-    actionBtn = `<span class="hint">Δική σου</span>`;
+  } else if (user.role === 'cook') {
+    actionBtn = l.user_id === user.id
+      ? `<span class="hint">Δική σου</span>`
+      : '';
   } else if (isInactive) {
     actionBtn = `<button class="btn btn-secondary btn-sm" disabled>Εξαντλήθηκε</button>`;
   } else {
@@ -168,7 +170,7 @@ function renderMapMarkers() {
     });
 
     let btnHtml = '';
-    if (user && user.role !== 'admin' && l.user_id !== user.id && l.status === 'active') {
+    if (user && user.role === 'consumer' && l.user_id !== user.id && l.status === 'active') {
       btnHtml = `<button class="popup-btn" onclick="requestFromMap(${l.id}, this)">🍴 Κράτηση Μερίδας</button>`;
     }
 

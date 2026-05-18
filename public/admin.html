@@ -24,6 +24,12 @@
     <h2 class="section-title">Στατιστικά Πλατφόρμας</h2>
     <div class="stats-grid" id="statsGrid"><div class="spinner"></div></div>
 
+    <!-- Users -->
+    <h2 class="section-title">👥 Εγγεγραμμένοι Χρήστες</h2>
+    <div class="leaderboard-card">
+      <div id="usersTable"><div class="spinner"></div></div>
+    </div>
+
     <!-- Leaderboard -->
     <h2 class="section-title">🏆 Leaderboard</h2>
 
@@ -44,7 +50,7 @@
       const user = requireAuth(['admin']);
       if (!user) return;
       renderNavbar('admin');
-      await Promise.all([loadStats(), loadLeaderboard()]);
+      await Promise.all([loadStats(), loadLeaderboard(), loadUsers()]);
     });
 
     async function loadStats() {
@@ -98,6 +104,35 @@
         }
       } catch(e) {
         document.getElementById('topDonor').innerHTML = '<p class="hint">Σφάλμα.</p>';
+      }
+    }
+
+    async function loadUsers() {
+      try {
+        const users = await API.get('/api/admin/users');
+        if (!users.length) {
+          document.getElementById('usersTable').innerHTML = '<p class="hint">Δεν υπάρχουν χρήστες ακόμα.</p>';
+          return;
+        }
+        const roleLabel = r => r === 'cook' ? '👨‍🍳 Μάγειρας' : '🍽️ Καταναλωτής';
+        document.getElementById('usersTable').innerHTML = `
+          <div class="table-wrap">
+          <table class="top-listings-table">
+            <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Ρόλος</th><th>Πόντοι</th><th>Εγγραφή</th></tr></thead>
+            <tbody>
+              ${users.map((u, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><strong>@${escHtml(u.username)}</strong></td>
+                  <td>${escHtml(u.email)}</td>
+                  <td>${roleLabel(u.role)}</td>
+                  <td>⭐ ${u.points}</td>
+                  <td style="color:var(--text-muted);font-size:.82rem">${u.created_at.slice(0,10)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>`;
+      } catch(e) {
+        document.getElementById('usersTable').innerHTML = '<p class="hint">Σφάλμα φόρτωσης.</p>';
       }
     }
 

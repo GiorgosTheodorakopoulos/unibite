@@ -4,8 +4,8 @@
   "description": "Φοιτητική πλατφόρμα διαμοιρασμού φαγητού",
   "main": "server/index.js",
   "scripts": {
-    "start": "node --experimental-sqlite server/index.js",
-    "dev": "nodemon --exec \"node --experimental-sqlite\" server/index.js"
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -29,6 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Auto-fill pickupTo = pickupFrom + 1h
+  document.getElementById('pickupFrom').addEventListener('change', e => {
+    const [h, m] = e.target.value.split(':').map(Number);
+    const end = new Date(0, 0, 0, h + 1, m);
+    const hh = String(end.getHours()).padStart(2, '0');
+    const mm = String(end.getMinutes()).padStart(2, '0');
+    document.getElementById('pickupTo').value = `${hh}:${mm}`;
+  });
+
   // Photo preview
   document.getElementById('photo').addEventListener('change', e => {
     const file = e.target.files[0];
@@ -50,7 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const title     = document.getElementById('title').value.trim();
     const portions  = document.getElementById('portions').value;
     const location  = document.getElementById('location').value.trim();
-    const pickupTime = document.getElementById('pickupTime').value;
+    const pickupFrom = document.getElementById('pickupFrom').value;
+    const pickupTo   = document.getElementById('pickupTo').value;
+    const pickupTime = pickupFrom && pickupTo ? `${pickupFrom} - ${pickupTo}` : '';
     const notes     = document.getElementById('notes').value.trim();
     const lat       = document.getElementById('lat').value;
     const lng       = document.getElementById('lng').value;
@@ -59,8 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ).map(cb => cb.value);
     const photoFile = document.getElementById('photo').files[0];
 
-    if (!title || !portions || !location || !pickupTime) {
+    if (!title || !portions || !location || !pickupFrom || !pickupTo) {
       showToast('Συμπλήρωσε όλα τα υποχρεωτικά πεδία', 'error'); return;
+    }
+    if (pickupFrom >= pickupTo) {
+      showToast('Η ώρα λήξης πρέπει να είναι μετά την ώρα έναρξης', 'error'); return;
     }
 
     btn.disabled = true; btn.textContent = 'Δημοσίευση...';

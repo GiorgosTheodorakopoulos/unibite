@@ -59,4 +59,15 @@ router.get('/leaderboard', (req, res) => {
   res.json({ top_donor: top_donor || null, top_rated_listings });
 });
 
+// GET /api/admin/users
+router.get('/users', (req, res) => {
+  const users = db.prepare(`
+    SELECT id, username, email, role, points, created_at
+    FROM users
+    WHERE role != 'admin'
+    ORDER BY created_at DESC
+  `).all();
+  res.json(users);
+});
+
 module.exports = router;

@@ -4,6 +4,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireAuth();
   if (!currentUser) return;
   renderNavbar('dashboard');
+
+  if (currentUser.role === 'cook') {
+    document.querySelector('[data-tab="myRequests"]').style.display = 'none';
+    document.querySelector('[data-tab="ratingsPending"]').style.display = 'none';
+  } else if (currentUser.role === 'consumer') {
+    document.querySelector('[data-tab="myListings"]').style.display = 'none';
+    document.querySelector('[data-tab="incoming"]').style.display = 'none';
+    document.querySelector('[data-tab="myRequests"]').classList.add('active');
+    document.querySelector('[data-tab="myListings"]').classList.remove('active');
+    document.getElementById('myRequests').classList.add('active');
+    document.getElementById('myListings').classList.remove('active');
+  }
+
   setupTabs();
 
   // Initial loads

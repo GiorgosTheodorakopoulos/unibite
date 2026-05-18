@@ -42,4 +42,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n🍽️  UniBite server running on http://localhost:${PORT}`);
   console.log(`   Admin login: admin@unibite.gr / admin123\n`);
+  const { exec } = require('child_process');
+  exec(`start http://localhost:${PORT}`);
 });

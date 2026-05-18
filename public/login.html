@@ -39,12 +39,12 @@
           <label>Σύνδεση ως <span class="required">*</span></label>
           <div class="role-options">
             <label class="role-card">
-              <input type="radio" name="role" value="consumer" required />
+              <input type="radio" name="role" value="consumer" />
               <div class="role-icon">🍽️</div>
               <div class="role-name">Καταναλωτής</div>
             </label>
             <label class="role-card">
-              <input type="radio" name="role" value="cook" required />
+              <input type="radio" name="role" value="cook" />
               <div class="role-icon">👨‍🍳</div>
               <div class="role-name">Μάγειρας</div>
             </label>
@@ -69,12 +69,11 @@
       const btn = e.target.querySelector('button');
       btn.disabled = true; btn.textContent = 'Σύνδεση...';
       const role = document.querySelector('input[name="role"]:checked')?.value;
-      if (!role) { showToast('Επίλεξε ρόλο', 'error'); btn.disabled = false; btn.textContent = 'Σύνδεση'; return; }
       try {
         const { token, user } = await API.post('/api/auth/login', {
           email: document.getElementById('email').value,
           password: document.getElementById('password').value,
-          role
+          ...(role && { role })
         });
         API.setAuth(token, user);
         window.location.href = user.role === 'admin' ? '/admin.html' : '/index.html';

@@ -16,6 +16,7 @@ router.post('/', authenticate, (req, res) => {
   const { listing_id } = req.body;
   if (!listing_id) return res.status(400).json({ error: 'Λείπει το listing_id' });
 
+  if (req.user.role === 'cook') return res.status(403).json({ error: 'Οι μάγειρες δεν μπορούν να κάνουν κράτηση' });
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (user.points < 1) return res.status(400).json({ error: 'Δεν έχεις αρκετούς πόντους (χρειάζεσαι τουλάχιστον 1)' });
 
