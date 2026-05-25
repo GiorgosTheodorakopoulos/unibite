@@ -27,6 +27,7 @@
         <option value="newest">Πιο πρόσφατα</option>
         <option value="portions_asc">Λιγότερες μερίδες</option>
         <option value="portions_desc">Περισσότερες μερίδες</option>
+        <option value="distance">📍 Κοντινότερα</option>
       </select>
       <select class="form-control" id="allergenFilter">
         <option value="">Φίλτρο αλλεργιογόνου</option>
@@ -37,6 +38,26 @@
         <option value="peanuts">🥜 Χωρίς φιστίκια</option>
         <option value="nuts">🌰 Χωρίς ξηρούς καρπούς</option>
         <option value="soybeans">🫘 Χωρίς σόγια</option>
+      </select>
+    </div>
+
+    <!-- Distance Filter -->
+    <div class="distance-bar">
+      <button class="btn btn-secondary btn-sm" id="locateBtn">📍 Τοποθεσία μου</button>
+      <span id="locStatus" class="loc-status"></span>
+      <select class="form-control" id="maxDistSelect" disabled>
+        <option value="">Όλες οι αποστάσεις</option>
+        <option value="0.5">≤ 500μ</option>
+        <option value="1">≤ 1χλμ</option>
+        <option value="2">≤ 2χλμ</option>
+        <option value="5">≤ 5χλμ</option>
+        <option value="10">≤ 10χλμ</option>
+      </select>
+      <select class="form-control" id="limitSelect">
+        <option value="">Χωρίς όριο αποτελεσμάτων</option>
+        <option value="5">Έως 5 αποτελέσματα</option>
+        <option value="10">Έως 10 αποτελέσματα</option>
+        <option value="20">Έως 20 αποτελέσματα</option>
       </select>
     </div>
 

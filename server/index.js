@@ -6,7 +6,7 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth',     require('./routes/auth'));
@@ -14,6 +14,11 @@ app.use('/api/listings', require('./routes/listings'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/ratings',  require('./routes/ratings'));
 app.use('/api/admin',    require('./routes/admin'));
+
+// Root → login
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
 
 // SPA fallback
 app.get(/^\/(?!api).*/, (req, res) => {

@@ -83,6 +83,7 @@ function renderNavbar(activePage) {
   const nav = document.getElementById('navbar');
   if (!nav) return;
   const user = API.getUser();
+
   let links = '';
   if (user) {
     links += `<a href="/index.html" ${activePage === 'feed' ? 'class="active"' : ''}>Feed</a>`;

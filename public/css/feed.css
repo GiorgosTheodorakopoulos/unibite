@@ -20,6 +20,37 @@
   max-width: 280px;
 }
 
+.distance-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: 1.25rem;
+  padding: .65rem .9rem;
+  background: #f0f4ff;
+  border-radius: 10px;
+  border: 1px solid #d0dbff;
+}
+.distance-bar .form-control {
+  flex: 1 1 160px;
+  max-width: 240px;
+}
+.loc-status {
+  font-size: .82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.loc-status.loc-ok { color: #16a34a; font-weight: 600; }
+
+.distance-tag {
+  background: #e0eaff;
+  color: #2563eb;
+  padding: .15rem .45rem;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+
 /* ── Listing cards grid ── */
 .listings-grid {
   display: grid;
@@ -116,4 +147,5 @@
 @media (max-width: 500px) {
   .listings-grid { grid-template-columns: 1fr; }
   .filter-bar .form-control { max-width: 100%; }
+  .distance-bar .form-control { max-width: 100%; }
 }

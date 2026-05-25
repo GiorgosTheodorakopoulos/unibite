@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Επιλογή Ρόλου – UniBite</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .auth-wrap { display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 60px); padding:2rem 1rem; }
+    .auth-card { width:100%; max-width:480px; background:#fff; border-radius:16px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.1); }
+    .auth-logo { text-align:center; font-size:2.5rem; margin-bottom:.25rem; }
+    .auth-title { text-align:center; font-size:1.4rem; font-weight:700; color:var(--dark); margin-bottom:.5rem; }
+    .auth-subtitle { text-align:center; font-size:.9rem; color:var(--text-muted); margin-bottom:1.75rem; }
+    .role-options { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:1.5rem; }
+    .role-card {
+      border:2px solid var(--border);
+      border-radius:12px;
+      padding:1.25rem 1rem;
+      cursor:pointer;
+      text-align:center;
+      transition:border-color .15s, background .15s, transform .1s;
+    }
+    .role-card:hover { border-color:var(--primary); transform:translateY(-1px); }
+    .role-card.selected { border-color:var(--primary); background:#fff8f0; }
+    .role-card .role-icon { font-size:2.2rem; }
+    .role-card .role-name { font-weight:700; margin-top:.4rem; color:var(--dark); }
+    .role-card .role-desc { font-size:.8rem; color:var(--text-muted); margin-top:.25rem; line-height:1.4; }
+  </style>
+</head>
+<body>
+  <nav id="navbar"></nav>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">🍽️</div>
+      <h1 class="auth-title">Πώς θα χρησιμοποιείς το UniBite;</h1>
+      <p class="auth-subtitle">Επίλεξε τον ρόλο σου για να ξεκινήσεις.</p>
+
+      <div class="role-options">
+        <div class="role-card" id="cookCard" onclick="selectRole('cook')">
+          <div class="role-icon">👨‍🍳</div>
+          <div class="role-name">Μάγειρας</div>
+          <div class="role-desc">Μαγειρεύω και μοιράζομαι μερίδες με συμφοιτητές</div>
+        </div>
+        <div class="role-card" id="consumerCard" onclick="selectRole('consumer')">
+          <div class="role-icon">🍽️</div>
+          <div class="role-name">Καταναλωτής</div>
+          <div class="role-desc">Αναζητώ σπιτικό φαγητό από συμφοιτητές</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="confirmBtn" disabled onclick="confirmRole()">Συνέχεια</button>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // Αν δεν είναι συνδεδεμένος → login
+    if (!API.getUser() || !API.getToken()) window.location.href = '/login.html';
+    // Αν έχει ήδη επιλέξει ρόλο → feed
+    const _u = API.getUser();
+    if (_u && _u.role !== 'new') window.location.href = '/index.html';
+
+    renderNavbar('choose-role');
+
+    let selectedRole = null;
+
+    function selectRole(role) {
+      selectedRole = role;
+      document.getElementById('cookCard').classList.toggle('selected', role === 'cook');
+      document.getElementById('consumerCard').classList.toggle('selected', role === 'consumer');
+      document.getElementById('confirmBtn').disabled = false;
+    }
+
+    async function confirmRole() {
+      const btn = document.getElementById('confirmBtn');
+      btn.disabled = true; btn.textContent = 'Αποθήκευση...';
+      try {
+        const { token, user } = await API.put('/api/auth/role', { role: selectedRole });
+        API.setAuth(token, user);
+        window.location.href = '/index.html';
+      } catch(err) {
+        showToast(err.message, 'error');
+        btn.disabled = false; btn.textContent = 'Συνέχεια';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -57,8 +57,8 @@
   </div>
   <script src="/js/api.js"></script>
   <script>
+    API.clearAuth(); // κάθε φορά που ανοίγει το login, καθαρίζουμε το session
     renderNavbar('login');
-    if (API.getUser()) window.location.href = '/index.html';
 
     window.addEventListener('pageshow', () => {
       document.getElementById('loginForm').reset();

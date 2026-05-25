@@ -12,13 +12,6 @@
     .auth-title { text-align:center; font-size:1.4rem; font-weight:700; color:var(--dark); margin-bottom:1.5rem; }
     .auth-footer { text-align:center; margin-top:1rem; font-size:.88rem; color:var(--text-muted); }
     .auth-footer a { color:var(--primary); text-decoration:none; font-weight:600; }
-    .role-options { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
-    .role-card { border:2px solid var(--border); border-radius:10px; padding:1rem; cursor:pointer; text-align:center; transition:border-color .15s, background .15s; }
-    .role-card input[type=radio] { display:none; }
-    .role-card:has(input:checked) { border-color:var(--primary); background:#fff8f0; }
-    .role-card .role-icon { font-size:2rem; }
-    .role-card .role-name { font-weight:600; margin-top:.3rem; }
-    .role-card .role-desc { font-size:.78rem; color:var(--text-muted); margin-top:.2rem; }
   </style>
 </head>
 <body>
@@ -40,23 +33,6 @@
           <label for="password">Κωδικός <span class="required">*</span></label>
           <input class="form-control" type="password" id="password" placeholder="Τουλάχιστον 6 χαρακτήρες" required />
         </div>
-        <div class="form-group">
-          <label>Ρόλος <span class="required">*</span></label>
-          <div class="role-options">
-            <label class="role-card">
-              <input type="radio" name="role" value="cook" required />
-              <div class="role-icon">👨‍🍳</div>
-              <div class="role-name">Μάγειρας</div>
-              <div class="role-desc">Μοιράζομαι φαγητό</div>
-            </label>
-            <label class="role-card">
-              <input type="radio" name="role" value="consumer" required />
-              <div class="role-icon">🍽️</div>
-              <div class="role-name">Καταναλωτής</div>
-              <div class="role-desc">Αναζητώ φαγητό</div>
-            </label>
-          </div>
-        </div>
         <p class="hint" style="margin-bottom:1rem">Ξεκινάς με <strong>5 πόντους</strong> δωρεάν!</p>
         <button type="submit" class="btn btn-primary btn-full">Εγγραφή</button>
       </form>
@@ -70,19 +46,17 @@
 
     document.getElementById('registerForm').addEventListener('submit', async e => {
       e.preventDefault();
-      const role = document.querySelector('input[name="role"]:checked')?.value;
-      if (!role) { showToast('Επίλεξε ρόλο', 'error'); return; }
       const btn = e.target.querySelector('button');
       btn.disabled = true; btn.textContent = 'Εγγραφή...';
       try {
         const { token, user } = await API.post('/api/auth/register', {
           username: document.getElementById('username').value,
           email: document.getElementById('email').value,
-          password: document.getElementById('password').value,
-          role
+          password: document.getElementById('password').value
         });
         API.setAuth(token, user);
-        window.location.href = '/index.html';
+        API.clearAuth(); // δεν κρατάμε session, πάμε για login
+        window.location.href = '/login.html';
       } catch(err) {
         showToast(err.message, 'error');
         btn.disabled = false; btn.textContent = 'Εγγραφή';

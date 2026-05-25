@@ -12,18 +12,15 @@ function makeToken(user, activeRole) {
 
 // POST /api/auth/register
 router.post('/register', (req, res) => {
-  const { username, email, password, role } = req.body;
-  if (!username || !email || !password || !role) {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
     return res.status(400).json({ error: 'Όλα τα πεδία είναι υποχρεωτικά' });
-  }
-  if (!['cook', 'consumer'].includes(role)) {
-    return res.status(400).json({ error: 'Μη έγκυρος ρόλος' });
   }
   try {
     const hash = bcrypt.hashSync(password, 10);
     const result = db.prepare(
       'INSERT INTO users (username, email, password_hash, role, points) VALUES (?, ?, ?, ?, 5)'
-    ).run(username, email, hash, role);
+    ).run(username, email, hash, 'consumer');
     const user = db.prepare('SELECT id, username, email, role, points FROM users WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json({ token: makeToken(user), user });
   } catch (e) {
@@ -34,6 +31,17 @@ router.post('/register', (req, res) => {
   }
 });
 
+// PUT /api/auth/role  – επιλογή ρόλου μετά την εγγραφή
+router.put('/role', authenticate, (req, res) => {
+  const { role } = req.body;
+  if (!['cook', 'consumer'].includes(role)) {
+    return res.status(400).json({ error: 'Μη έγκυρος ρόλος' });
+  }
+  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, req.user.id);
+  const user = db.prepare('SELECT id, username, email, role, points FROM users WHERE id = ?').get(req.user.id);
+  res.json({ token: makeToken(user), user });
+});
+
 // POST /api/auth/login
 router.post('/login', (req, res) => {
   const { email, password, role: selectedRole } = req.body;
@@ -42,9 +50,16 @@ router.post('/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'Λάθος email ή password' });
   }
+  if (user.role !== 'admin' && (!selectedRole || !['cook', 'consumer'].includes(selectedRole))) {
+    return res.status(400).json({ error: 'Επίλεξε αν θα συνδεθείς ως Μάγειρας ή Καταναλωτής' });
+  }
   const activeRole = user.role === 'admin'
     ? 'admin'
-    : (selectedRole && ['cook', 'consumer'].includes(selectedRole) ? selectedRole : user.role);
+    : selectedRole;
+  // Αποθηκεύουμε τον επιλεγμένο ρόλο στη ΒΔ ώστε να παραμένει συνεπής
+  if (activeRole !== 'admin') {
+    db.prepare('UPDATE users SET role = ? WHERE id = ?').run(activeRole, user.id);
+  }
   const { password_hash, ...safeUser } = user;
   res.json({ token: makeToken(user, activeRole), user: { ...safeUser, role: activeRole } });
 });
