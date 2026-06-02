@@ -1,0 +1,5 @@
+node_modules/
+server/*.db
+server/*.db-shm
+server/*.db-wal
+uploads/

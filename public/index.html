@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feed – UniBite</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/feed.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div class="page-container">
+    <div class="feed-header">
+      <h1 class="page-title">🍽️ Διαθέσιμο Φαγητό</h1>
+      <div class="view-toggle">
+        <button class="btn btn-secondary btn-sm active" id="listViewBtn">☰ Λίστα</button>
+        <button class="btn btn-secondary btn-sm" id="mapViewBtn">🗺️ Χάρτης</button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <input class="form-control" type="search" id="searchInput" placeholder="🔍 Αναζήτηση..." />
+      <select class="form-control" id="sortSelect">
+        <option value="newest">Πιο πρόσφατα</option>
+        <option value="portions_asc">Λιγότερες μερίδες</option>
+        <option value="portions_desc">Περισσότερες μερίδες</option>
+        <option value="distance">📍 Κοντινότερα</option>
+      </select>
+      <select class="form-control" id="allergenFilter">
+        <option value="">Φίλτρο αλλεργιογόνου</option>
+        <option value="gluten">🌾 Χωρίς γλουτένη</option>
+        <option value="milk">🥛 Χωρίς γάλα</option>
+        <option value="eggs">🥚 Χωρίς αυγά</option>
+        <option value="fish">🐟 Χωρίς ψάρι</option>
+        <option value="peanuts">🥜 Χωρίς φιστίκια</option>
+        <option value="nuts">🌰 Χωρίς ξηρούς καρπούς</option>
+        <option value="soybeans">🫘 Χωρίς σόγια</option>
+      </select>
+    </div>
+
+    <!-- Distance Filter -->
+    <div class="distance-bar">
+      <button class="btn btn-secondary btn-sm" id="locateBtn">📍 Τοποθεσία μου</button>
+      <span id="locStatus" class="loc-status"></span>
+      <select class="form-control" id="maxDistSelect" disabled>
+        <option value="">Όλες οι αποστάσεις</option>
+        <option value="0.5">≤ 500μ</option>
+        <option value="1">≤ 1χλμ</option>
+        <option value="2">≤ 2χλμ</option>
+        <option value="5">≤ 5χλμ</option>
+        <option value="10">≤ 10χλμ</option>
+      </select>
+      <select class="form-control" id="limitSelect">
+        <option value="">Χωρίς όριο αποτελεσμάτων</option>
+        <option value="5">Έως 5 αποτελέσματα</option>
+        <option value="10">Έως 10 αποτελέσματα</option>
+        <option value="20">Έως 20 αποτελέσματα</option>
+      </select>
+    </div>
+
+    <!-- List View -->
+    <div id="listView">
+      <div id="listingsGrid" class="listings-grid">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- Map View -->
+    <div id="mapView" style="display:none">
+      <div id="map" style="height:520px;border-radius:12px;overflow:hidden;"></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/feed.js"></script>
+</body>
+</html>

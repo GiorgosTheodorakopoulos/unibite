@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Εγγραφή – UniBite</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .auth-wrap { display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 60px); padding:2rem 1rem; }
+    .auth-card { width:100%; max-width:440px; background:#fff; border-radius:16px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.1); }
+    .auth-logo { text-align:center; font-size:2.5rem; margin-bottom:.25rem; }
+    .auth-title { text-align:center; font-size:1.4rem; font-weight:700; color:var(--dark); margin-bottom:1.5rem; }
+    .auth-footer { text-align:center; margin-top:1rem; font-size:.88rem; color:var(--text-muted); }
+    .auth-footer a { color:var(--primary); text-decoration:none; font-weight:600; }
+  </style>
+</head>
+<body>
+  <nav id="navbar"></nav>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">🍽️</div>
+      <h1 class="auth-title">Εγγραφή στο UniBite</h1>
+      <form id="registerForm" novalidate>
+        <div class="form-group">
+          <label for="username">Όνομα χρήστη <span class="required">*</span></label>
+          <input class="form-control" type="text" id="username" placeholder="π.χ. nikos_chef" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email <span class="required">*</span></label>
+          <input class="form-control" type="email" id="email" placeholder="you@university.gr" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Κωδικός <span class="required">*</span></label>
+          <input class="form-control" type="password" id="password" placeholder="Τουλάχιστον 6 χαρακτήρες" required />
+        </div>
+        <p class="hint" style="margin-bottom:1rem">Ξεκινάς με <strong>5 πόντους</strong> δωρεάν!</p>
+        <button type="submit" class="btn btn-primary btn-full">Εγγραφή</button>
+      </form>
+      <p class="auth-footer">Έχεις ήδη λογαριασμό; <a href="/login.html">Σύνδεση</a></p>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script>
+    renderNavbar('register');
+    if (API.getUser()) window.location.href = '/index.html';
+
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      btn.disabled = true; btn.textContent = 'Εγγραφή...';
+      try {
+        const { token, user } = await API.post('/api/auth/register', {
+          username: document.getElementById('username').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        });
+        API.setAuth(token, user);
+        API.clearAuth(); // δεν κρατάμε session, πάμε για login
+        window.location.href = '/login.html';
+      } catch(err) {
+        showToast(err.message, 'error');
+        btn.disabled = false; btn.textContent = 'Εγγραφή';
+      }
+    });
+  </script>
+</body>
+</html>
