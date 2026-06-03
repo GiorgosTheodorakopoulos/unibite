@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 function computeStatus(listing) {
-  const created = new Date(listing.created_at + 'Z');
+  const created = new Date(listing.created_at);
   const expiry = new Date(created.getTime() + 48 * 3600 * 1000);
   if (new Date() > expiry) return 'expired';
   return listing.portions_available > 0 ? 'active' : 'inactive';
@@ -27,10 +27,9 @@ function parseListing(l) {
   return l;
 }
 
-// GET /api/listings — all non-expired listings
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString().replace('T', ' ').slice(0, 19);
-  const listings = db.prepare(`
+  const listings = await db.prepare(`
     SELECT l.*, u.username AS cook_username
     FROM listings l
     JOIN users u ON l.user_id = u.id
@@ -40,10 +39,8 @@ router.get('/', (req, res) => {
   res.json(listings.map(parseListing));
 });
 
-// ⚠️ Specific routes BEFORE /:id to avoid conflict
-// GET /api/listings/mine/all
-router.get('/mine/all', authenticate, (req, res) => {
-  const listings = db.prepare(`
+router.get('/mine/all', authenticate, async (req, res) => {
+  const listings = await db.prepare(`
     SELECT l.*, u.username AS cook_username
     FROM listings l JOIN users u ON l.user_id = u.id
     WHERE l.user_id = ?
@@ -52,9 +49,8 @@ router.get('/mine/all', authenticate, (req, res) => {
   res.json(listings.map(parseListing));
 });
 
-// GET /api/listings/:id
-router.get('/:id', (req, res) => {
-  const l = db.prepare(`
+router.get('/:id', async (req, res) => {
+  const l = await db.prepare(`
     SELECT l.*, u.username AS cook_username
     FROM listings l JOIN users u ON l.user_id = u.id
     WHERE l.id = ?
@@ -63,8 +59,8 @@ router.get('/:id', (req, res) => {
   res.json(parseListing(l));
 });
 
-// POST /api/listings — create
-router.post('/', authenticate, upload.single('photo'), (req, res) => {
+router.post('/', authenticate, upload.single('photo'), async (req, res) => {
+  if (req.user.role !== 'cook') return res.status(403).json({ error: 'Μόνο οι μάγειρες μπορούν να δημιουργήσουν αγγελίες' });
   const { title, notes, portions, location, lat, lng, pickup_time, allergens } = req.body;
   if (!title || !portions || !location || !pickup_time) {
     return res.status(400).json({ error: 'Λείπουν υποχρεωτικά πεδία' });
@@ -78,19 +74,18 @@ router.post('/', authenticate, upload.single('photo'), (req, res) => {
   }
   const photo = req.file ? `/uploads/${req.file.filename}` : null;
 
-  const info = db.prepare(`
+  const info = await db.prepare(`
     INSERT INTO listings (user_id, title, photo, notes, portions_total, portions_available, location, lat, lng, pickup_time, allergens)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(req.user.id, title, photo, notes || '', p, p,
     location, lat || null, lng || null, pickup_time, JSON.stringify(allergensArr));
 
-  const listing = db.prepare('SELECT * FROM listings WHERE id = ?').get(info.lastInsertRowid);
+  const listing = await db.prepare('SELECT * FROM listings WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(parseListing(listing));
 });
 
-// PUT /api/listings/:id — update
-router.put('/:id', authenticate, upload.single('photo'), (req, res) => {
-  const listing = db.prepare('SELECT * FROM listings WHERE id = ?').get(req.params.id);
+router.put('/:id', authenticate, upload.single('photo'), async (req, res) => {
+  const listing = await db.prepare('SELECT * FROM listings WHERE id = ?').get(req.params.id);
   if (!listing) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   if (listing.user_id !== req.user.id) return res.status(403).json({ error: 'Δεν έχεις δικαίωμα' });
 
@@ -102,7 +97,7 @@ router.put('/:id', authenticate, upload.single('photo'), (req, res) => {
   }
   const photo = req.file ? `/uploads/${req.file.filename}` : listing.photo;
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE listings SET title=?, photo=?, notes=?, portions_total=?, location=?, lat=?, lng=?, pickup_time=?, allergens=?
     WHERE id=?
   `).run(
@@ -111,19 +106,32 @@ router.put('/:id', authenticate, upload.single('photo'), (req, res) => {
     pickup_time || listing.pickup_time, allergensStr, listing.id
   );
 
-  const updated = db.prepare('SELECT * FROM listings WHERE id = ?').get(listing.id);
+  const updated = await db.prepare('SELECT * FROM listings WHERE id = ?').get(listing.id);
   res.json(parseListing(updated));
 });
 
-// DELETE /api/listings/:id
-router.delete('/:id', authenticate, (req, res) => {
-  const listing = db.prepare('SELECT * FROM listings WHERE id = ?').get(req.params.id);
-  if (!listing) return res.status(404).json({ error: 'Δεν βρέθηκε' });
-  if (listing.user_id !== req.user.id && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Δεν έχεις δικαίωμα' });
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const listing = await db.prepare('SELECT * FROM listings WHERE id = ?').get(req.params.id);
+    if (!listing) return res.status(404).json({ error: 'Δεν βρέθηκε' });
+    if (listing.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Δεν έχεις δικαίωμα' });
+    }
+    await db.transaction(async (tx) => {
+      // Must delete ratings before requests, then requests before listing (FK order)
+      await tx.prepare(`
+        DELETE FROM ratings WHERE request_id IN (
+          SELECT id FROM requests WHERE listing_id = ?
+        )
+      `).run(listing.id);
+      await tx.prepare('DELETE FROM requests WHERE listing_id = ?').run(listing.id);
+      await tx.prepare('DELETE FROM listings WHERE id = ?').run(listing.id);
+    });
+    res.json({ message: 'Η αγγελία διαγράφηκε' });
+  } catch (e) {
+    console.error('Delete listing error:', e.message);
+    res.status(500).json({ error: 'Σφάλμα κατά τη διαγραφή' });
   }
-  db.prepare('DELETE FROM listings WHERE id = ?').run(listing.id);
-  res.json({ message: 'Η αγγελία διαγράφηκε' });
 });
 
 module.exports = router;

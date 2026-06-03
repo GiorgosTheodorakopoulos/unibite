@@ -13,6 +13,9 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const _u = API.getUser();
+  if (_u && _u.role === 'cook') { window.location.href = '/my-dashboard.html'; return; }
+  if (_u && _u.role === 'admin') { window.location.href = '/admin.html'; return; }
   renderNavbar('feed');
   await loadListings();
 
@@ -146,6 +149,8 @@ function listingCardHTML(l, user) {
       : '';
   } else if (isInactive) {
     actionBtn = `<button class="btn btn-secondary btn-sm" disabled>Εξαντλήθηκε</button>`;
+  } else if (user.points < 1) {
+    actionBtn = `<button class="btn btn-secondary btn-sm" disabled title="Χρειάζεσαι τουλάχιστον 1 πόντο">🍴 Κράτηση (0 πόντοι)</button>`;
   } else {
     actionBtn = `<button class="btn btn-primary btn-sm request-btn" data-id="${l.id}">🍴 Κράτηση</button>`;
   }
