@@ -188,6 +188,7 @@ async function loadMyRequests() {
   const el = document.getElementById('myRequestsContent');
   try {
     const reqs = await API.get('/api/requests/my');
+    loadPoints(); // Penalties may have been applied server-side; refresh displayed balance.
     if (!reqs.length) {
       el.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽️</div><p>Δεν έχεις αιτήματα ακόμα.</p></div>';
       return;
@@ -219,16 +220,24 @@ async function loadPendingRatings() {
       el.innerHTML = '<div class="empty-state"><div class="empty-icon">⭐</div><p>Δεν υπάρχουν εκκρεμείς αξιολογήσεις.</p></div>';
       return;
     }
-    el.innerHTML = pending.map(r => `
-      <div class="rating-item" id="rating-item-${r.request_id}">
-        <h3>🍽️ ${escHtml(r.listing_title)} <span class="hint">από ${escHtml(r.cook_username)}</span></h3>
-        <div class="star-widget" data-req="${r.request_id}">
-          ${[1,2,3,4,5].map(i => `<span class="star" data-val="${i}">★</span>`).join('')}
-        </div>
-        <button class="btn btn-primary btn-sm" style="margin-top:.5rem"
-          onclick="submitRating(${r.request_id}, this)" disabled>Αποστολή</button>
-      </div>
-    `).join('');
+    el.innerHTML = pending.map(r => {
+      const deadline = new Date(r.created_at).getTime() + 48 * 3600 * 1000;
+      const msLeft = deadline - Date.now();
+      const hLeft = Math.max(0, Math.floor(msLeft / 3600000));
+      const mLeft = Math.max(0, Math.floor((msLeft % 3600000) / 60000));
+      const urgentClass = hLeft < 6 ? 'style="color:var(--danger);font-weight:600"' : 'style="color:var(--text-muted)"';
+      const countdown = `<small ${urgentClass}>⏱ ${hLeft}ω ${mLeft}λ απομένουν</small>`;
+      return `
+        <div class="rating-item" id="rating-item-${r.request_id}">
+          <h3>🍽️ ${escHtml(r.listing_title)} <span class="hint">από ${escHtml(r.cook_username)}</span></h3>
+          <div>${countdown}</div>
+          <div class="star-widget" data-req="${r.request_id}">
+            ${[1,2,3,4,5].map(i => `<span class="star" data-val="${i}">★</span>`).join('')}
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-top:.5rem"
+            onclick="submitRating(${r.request_id}, this)" disabled>Αποστολή</button>
+        </div>`;
+    }).join('');
 
     // Star widget logic
     document.querySelectorAll('.star-widget').forEach(widget => {

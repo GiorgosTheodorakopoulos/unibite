@@ -76,7 +76,11 @@
           ...(role && { role })
         });
         API.setAuth(token, user);
-        window.location.href = user.role === 'admin' ? '/admin.html' : '/index.html';
+        window.location.href = user.role === 'admin'
+          ? '/admin.html'
+          : user.role === 'cook'
+            ? '/my-dashboard.html'
+            : '/index.html';
       } catch(err) {
         showToast(err.message, 'error');
         btn.disabled = false; btn.textContent = 'Σύνδεση';

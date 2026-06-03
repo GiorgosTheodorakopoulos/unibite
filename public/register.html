@@ -33,7 +33,7 @@
           <label for="password">Κωδικός <span class="required">*</span></label>
           <input class="form-control" type="password" id="password" placeholder="Τουλάχιστον 6 χαρακτήρες" required />
         </div>
-        <p class="hint" style="margin-bottom:1rem">Ξεκινάς με <strong>5 πόντους</strong> δωρεάν!</p>
+        <p class="hint" style="margin-bottom:1rem">Ξεκινάς με <strong>5 πόντους</strong> δωρεάν! Επίλεγε ρόλο κάθε φορά που συνδέεσαι.</p>
         <button type="submit" class="btn btn-primary btn-full">Εγγραφή</button>
       </form>
       <p class="auth-footer">Έχεις ήδη λογαριασμό; <a href="/login.html">Σύνδεση</a></p>
@@ -49,14 +49,13 @@
       const btn = e.target.querySelector('button');
       btn.disabled = true; btn.textContent = 'Εγγραφή...';
       try {
-        const { token, user } = await API.post('/api/auth/register', {
+        await API.post('/api/auth/register', {
           username: document.getElementById('username').value,
           email: document.getElementById('email').value,
           password: document.getElementById('password').value
         });
-        API.setAuth(token, user);
-        API.clearAuth(); // δεν κρατάμε session, πάμε για login
-        window.location.href = '/login.html';
+        showToast('Εγγραφή επιτυχής! Συνδέσου τώρα.', 'success');
+        setTimeout(() => window.location.href = '/login.html', 1200);
       } catch(err) {
         showToast(err.message, 'error');
         btn.disabled = false; btn.textContent = 'Εγγραφή';

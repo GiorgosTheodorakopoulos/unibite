@@ -86,11 +86,15 @@ function renderNavbar(activePage) {
 
   let links = '';
   if (user) {
-    links += `<a href="/index.html" ${activePage === 'feed' ? 'class="active"' : ''}>Feed</a>`;
+    if (user.role === 'consumer') {
+      links += `<a href="/index.html" ${activePage === 'feed' ? 'class="active"' : ''}>Feed</a>`;
+    }
     if (user.role === 'cook') {
       links += `<a href="/create-listing.html" ${activePage === 'create' ? 'class="active"' : ''}>+ Αγγελία</a>`;
     }
-    links += `<a href="/my-dashboard.html" ${activePage === 'dashboard' ? 'class="active"' : ''}>Dashboard</a>`;
+    if (user.role !== 'admin') {
+      links += `<a href="/my-dashboard.html" ${activePage === 'dashboard' ? 'class="active"' : ''}>Dashboard</a>`;
+    }
     if (user.role === 'admin') {
       links += `<a href="/admin.html" ${activePage === 'admin' ? 'class="active"' : ''}>Admin</a>`;
     }

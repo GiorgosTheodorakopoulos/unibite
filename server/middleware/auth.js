@@ -3,7 +3,7 @@ const db = require('../db');
 
 const JWT_SECRET = 'unibite_secret_2025';
 
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Απαιτείται σύνδεση' });
@@ -11,7 +11,7 @@ function authenticate(req, res, next) {
   const token = header.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    const user = db.prepare('SELECT id, username, email, role, points FROM users WHERE id = ?').get(payload.id);
+    const user = await db.prepare('SELECT id, username, email, role, points FROM users WHERE id = ?').get(payload.id);
     if (!user) return res.status(401).json({ error: 'Χρήστης δεν βρέθηκε' });
     req.user = { ...user, role: payload.role || user.role };
     next();
