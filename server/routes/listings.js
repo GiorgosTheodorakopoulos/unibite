@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ function parseListing(l) {
   return l;
 }
 
-router.get('/', async (req, res) => {
+router.get('/', asyncHandler(async (req, res) => {
   const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString().replace('T', ' ').slice(0, 19);
   const listings = await db.prepare(`
     SELECT l.*, u.username AS cook_username
@@ -37,9 +38,9 @@ router.get('/', async (req, res) => {
     ORDER BY l.created_at DESC
   `).all(cutoff);
   res.json(listings.map(parseListing));
-});
+}));
 
-router.get('/mine/all', authenticate, async (req, res) => {
+router.get('/mine/all', authenticate, asyncHandler(async (req, res) => {
   const listings = await db.prepare(`
     SELECT l.*, u.username AS cook_username
     FROM listings l JOIN users u ON l.user_id = u.id
@@ -47,9 +48,9 @@ router.get('/mine/all', authenticate, async (req, res) => {
     ORDER BY l.created_at DESC
   `).all(req.user.id);
   res.json(listings.map(parseListing));
-});
+}));
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', asyncHandler(async (req, res) => {
   const l = await db.prepare(`
     SELECT l.*, u.username AS cook_username
     FROM listings l JOIN users u ON l.user_id = u.id
@@ -57,9 +58,9 @@ router.get('/:id', async (req, res) => {
   `).get(req.params.id);
   if (!l) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   res.json(parseListing(l));
-});
+}));
 
-router.post('/', authenticate, upload.single('photo'), async (req, res) => {
+router.post('/', authenticate, upload.single('photo'), asyncHandler(async (req, res) => {
   if (req.user.role !== 'cook') return res.status(403).json({ error: 'Μόνο οι μάγειρες μπορούν να δημιουργήσουν αγγελίες' });
   const { title, notes, portions, location, lat, lng, pickup_time, allergens } = req.body;
   if (!title || !portions || !location || !pickup_time) {
@@ -82,15 +83,20 @@ router.post('/', authenticate, upload.single('photo'), async (req, res) => {
 
   const listing = await db.prepare('SELECT * FROM listings WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(parseListing(listing));
-});
+}));
 
-router.put('/:id', authenticate, upload.single('photo'), async (req, res) => {
+router.put('/:id', authenticate, upload.single('photo'), asyncHandler(async (req, res) => {
   const listing = await db.prepare('SELECT * FROM listings WHERE id = ?').get(req.params.id);
   if (!listing) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   if (listing.user_id !== req.user.id) return res.status(403).json({ error: 'Δεν έχεις δικαίωμα' });
 
   const { title, notes, portions, location, lat, lng, pickup_time, allergens } = req.body;
   const p = portions ? parseInt(portions, 10) : listing.portions_total;
+  if (portions && p < listing.portions_available) {
+    return res.status(400).json({
+      error: `Δεν μπορείς να ορίσεις λιγότερες μερίδες (${p}) από τις ήδη δεσμευμένες/διαθέσιμες (${listing.portions_available})`
+    });
+  }
   let allergensStr = listing.allergens;
   if (allergens) {
     allergensStr = JSON.stringify(Array.isArray(allergens) ? allergens : JSON.parse(allergens));
@@ -108,9 +114,9 @@ router.put('/:id', authenticate, upload.single('photo'), async (req, res) => {
 
   const updated = await db.prepare('SELECT * FROM listings WHERE id = ?').get(listing.id);
   res.json(parseListing(updated));
-});
+}));
 
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
   try {
     const listing = await db.prepare('SELECT * FROM listings WHERE id = ?').get(req.params.id);
     if (!listing) return res.status(404).json({ error: 'Δεν βρέθηκε' });
@@ -132,6 +138,6 @@ router.delete('/:id', authenticate, async (req, res) => {
     console.error('Delete listing error:', e.message);
     res.status(500).json({ error: 'Σφάλμα κατά τη διαγραφή' });
   }
-});
+}));
 
 module.exports = router;

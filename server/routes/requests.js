@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ async function applyRatingPenalties(consumerId) {
 // POST /api/requests — consumer reserves a portion
 // Requires ≥ 1 point to reserve (reputation gate). Points are NOT deducted on reservation.
 // Points are only lost as penalties (no-show, no-rating within 48h).
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, asyncHandler(async (req, res) => {
   const { listing_id } = req.body;
   if (!listing_id) return res.status(400).json({ error: 'Λείπει το listing_id' });
 
@@ -71,20 +72,17 @@ router.post('/', authenticate, async (req, res) => {
   ).get(listing_id, req.user.id);
   if (existing) return res.status(400).json({ error: 'Έχεις ήδη κάνει αίτημα για αυτή την αγγελία' });
 
-  const result = await db.transaction(async (tx) => {
-    await tx.prepare('UPDATE users SET points = points - 1 WHERE id = ?').run(req.user.id);
-    return tx.prepare(
-      'INSERT INTO requests (listing_id, consumer_id, status) VALUES (?, ?, ?)'
-    ).run(listing_id, req.user.id, 'pending');
-  });
+  const result = await db.prepare(
+    'INSERT INTO requests (listing_id, consumer_id, status) VALUES (?, ?, ?)'
+  ).run(listing_id, req.user.id, 'pending');
 
   const request = await db.prepare('SELECT * FROM requests WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(request);
-});
+}));
 
 // GET /api/requests/my — consumer's own requests
 // Applies rating penalties before returning so the consumer sees accurate points.
-router.get('/my', authenticate, async (req, res) => {
+router.get('/my', authenticate, asyncHandler(async (req, res) => {
   await applyRatingPenalties(req.user.id);
   const requests = await db.prepare(`
     SELECT r.*, l.title AS listing_title, l.location, l.pickup_time, l.photo,
@@ -97,10 +95,10 @@ router.get('/my', authenticate, async (req, res) => {
     ORDER BY r.created_at DESC
   `).all(req.user.id);
   res.json(requests);
-});
+}));
 
 // GET /api/requests/incoming — cook's incoming requests
-router.get('/incoming', authenticate, async (req, res) => {
+router.get('/incoming', authenticate, asyncHandler(async (req, res) => {
   if (req.user.role !== 'cook') return res.status(403).json({ error: 'Πρόσβαση μόνο για μάγειρες' });
   const requests = await db.prepare(`
     SELECT r.*, l.title AS listing_title, l.portions_available,
@@ -112,10 +110,10 @@ router.get('/incoming', authenticate, async (req, res) => {
     ORDER BY r.created_at DESC
   `).all(req.user.id);
   res.json(requests);
-});
+}));
 
 // PUT /api/requests/:id/approve
-router.put('/:id/approve', authenticate, async (req, res) => {
+router.put('/:id/approve', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id, l.portions_available
     FROM requests r JOIN listings l ON r.listing_id = l.id
@@ -129,11 +127,11 @@ router.put('/:id/approve', authenticate, async (req, res) => {
   await db.prepare('UPDATE requests SET status = ? WHERE id = ?').run('approved', request.id);
   await db.prepare('UPDATE listings SET portions_available = portions_available - 1 WHERE id = ?').run(request.listing_id);
   res.json({ message: 'Αποδοχή αιτήματος' });
-});
+}));
 
 // PUT /api/requests/:id/reject
-// No point refund — reservation no longer costs a point.
-router.put('/:id/reject', authenticate, async (req, res) => {
+// No point refund — reservation never cost a point in the first place.
+router.put('/:id/reject', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id
     FROM requests r JOIN listings l ON r.listing_id = l.id
@@ -143,19 +141,16 @@ router.put('/:id/reject', authenticate, async (req, res) => {
   if (request.cook_id !== req.user.id) return res.status(403).json({ error: 'Δεν έχεις δικαίωμα' });
   if (request.status !== 'pending') return res.status(400).json({ error: 'Το αίτημα δεν είναι σε αναμονή' });
 
-  await db.transaction(async (tx) => {
-    await tx.prepare('UPDATE requests SET status = ? WHERE id = ?').run('rejected', request.id);
-    await tx.prepare('UPDATE users SET points = points + 1 WHERE id = ?').run(request.consumer_id);
-  });
+  await db.prepare('UPDATE requests SET status = ? WHERE id = ?').run('rejected', request.id);
   res.json({ message: 'Απόρριψη αιτήματος' });
-});
+}));
 
 // PUT /api/requests/:id/complete — cook marks portion as picked up
 // Sets pickup_time (starts the 48h rating window).
 // +1 point to cook atomically with the status update.
 // Example trace: cook completes request 7 → DB transaction: status='completed', pickup_time=NOW(),
 //   cook.points += 1. Response includes cookPoints for immediate UI update.
-router.put('/:id/complete', authenticate, async (req, res) => {
+router.put('/:id/complete', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id
     FROM requests r JOIN listings l ON r.listing_id = l.id
@@ -174,13 +169,13 @@ router.put('/:id/complete', authenticate, async (req, res) => {
   });
 
   res.json({ message: 'Η παράδοση ολοκληρώθηκε', cookPoints: cook.points });
-});
+}));
 
 // PUT /api/requests/:id/no_show — cook marks consumer as no-show
 // -1 point from consumer (floor 0) atomically. Restores the portion.
 // Example trace: consumer 12 no-shows request 5 → DB transaction: status='no_show',
 //   consumer.points = GREATEST(0, points-1), listing.portions_available += 1.
-router.put('/:id/no_show', authenticate, async (req, res) => {
+router.put('/:id/no_show', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id
     FROM requests r JOIN listings l ON r.listing_id = l.id
@@ -200,6 +195,6 @@ router.put('/:id/no_show', authenticate, async (req, res) => {
   });
 
   res.json({ message: 'No-show καταχωρήθηκε', consumerPoints: consumer.points });
-});
+}));
 
 module.exports = router;

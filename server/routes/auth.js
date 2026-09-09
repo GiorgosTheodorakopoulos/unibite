@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { authenticate, JWT_SECRET } = require('../middleware/auth');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ function makeToken(user, activeRole) {
 
 // POST /api/auth/register
 // Accepts optional `role` (cook|consumer). Consumer → 5 points, Cook → 0 points.
-router.post('/register', async (req, res) => {
+router.post('/register', asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Όλα τα πεδία είναι υποχρεωτικά' });
@@ -32,10 +33,10 @@ router.post('/register', async (req, res) => {
     }
     res.status(500).json({ error: 'Σφάλμα server' });
   }
-});
+}));
 
 // PUT /api/auth/role — role picker after first registration (legacy flow)
-router.put('/role', authenticate, async (req, res) => {
+router.put('/role', authenticate, asyncHandler(async (req, res) => {
   const { role } = req.body;
   if (!['cook', 'consumer'].includes(role)) {
     return res.status(400).json({ error: 'Μη έγκυρος ρόλος' });
@@ -45,10 +46,10 @@ router.put('/role', authenticate, async (req, res) => {
     'SELECT id, username, email, role, points FROM users WHERE id = ?'
   ).get(req.user.id);
   res.json({ token: makeToken(user), user });
-});
+}));
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', asyncHandler(async (req, res) => {
   const { email, password, role: selectedRole } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Συμπλήρωσε email και password' });
   const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
@@ -64,14 +65,14 @@ router.post('/login', async (req, res) => {
   }
   const { password_hash, ...safeUser } = user;
   res.json({ token: makeToken(user, activeRole), user: { ...safeUser, role: activeRole } });
-});
+}));
 
 // GET /api/auth/me
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', authenticate, asyncHandler(async (req, res) => {
   const user = await db.prepare(
     'SELECT id, username, email, role, points FROM users WHERE id = ?'
   ).get(req.user.id);
   res.json(user);
-});
+}));
 
 module.exports = router;

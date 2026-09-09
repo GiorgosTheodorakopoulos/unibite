@@ -32,25 +32,29 @@ async function start() {
   await db.initDb();
 
   setInterval(async () => {
-    const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString().replace('T', ' ').slice(0, 19);
-    const unrated = await db.prepare(`
-      SELECT r.id, r.consumer_id FROM requests r
-      WHERE r.status = 'completed'
-        AND r.rating_penalty_applied = 0
-        AND r.pickup_time IS NOT NULL
-        AND r.pickup_time < ?
-        AND NOT EXISTS (SELECT 1 FROM ratings rt WHERE rt.request_id = r.id)
-    `).all(cutoff);
-    for (const req of unrated) {
-      await db.transaction(async (tx) => {
-        const result = await tx.prepare(
-          'UPDATE requests SET rating_penalty_applied = 1 WHERE id = ? AND rating_penalty_applied = 0'
-        ).run(req.id);
-        if (result.rowCount > 0) {
-          await tx.prepare('UPDATE users SET points = GREATEST(0, points - 1) WHERE id = ?').run(req.consumer_id);
-          console.log(`Rating penalty: consumer ${req.consumer_id}, request ${req.id}`);
-        }
-      });
+    try {
+      const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString().replace('T', ' ').slice(0, 19);
+      const unrated = await db.prepare(`
+        SELECT r.id, r.consumer_id FROM requests r
+        WHERE r.status = 'completed'
+          AND r.rating_penalty_applied = 0
+          AND r.pickup_time IS NOT NULL
+          AND r.pickup_time < ?
+          AND NOT EXISTS (SELECT 1 FROM ratings rt WHERE rt.request_id = r.id)
+      `).all(cutoff);
+      for (const req of unrated) {
+        await db.transaction(async (tx) => {
+          const result = await tx.prepare(
+            'UPDATE requests SET rating_penalty_applied = 1 WHERE id = ? AND rating_penalty_applied = 0'
+          ).run(req.id);
+          if (result.rowCount > 0) {
+            await tx.prepare('UPDATE users SET points = GREATEST(0, points - 1) WHERE id = ?').run(req.consumer_id);
+            console.log(`Rating penalty: consumer ${req.consumer_id}, request ${req.id}`);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Rating penalty sweep failed:', e.message);
     }
   }, 60 * 60 * 1000);
 

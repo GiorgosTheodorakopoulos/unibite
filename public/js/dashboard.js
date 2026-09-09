@@ -99,7 +99,7 @@ async function openEdit(id) {
     const l = await API.get(`/api/listings/${id}`);
     document.getElementById('editId').value = l.id;
     document.getElementById('editTitle').value = l.title;
-    document.getElementById('editPortions').value = l.portions_available;
+    document.getElementById('editPortions').value = l.portions_total;
     document.getElementById('editLocation').value = l.location;
     document.getElementById('editPickupTime').value = l.pickup_time;
     document.getElementById('editNotes').value = l.notes || '';

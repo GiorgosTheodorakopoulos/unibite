@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ const router = express.Router();
 // +1 bonus point to cook if score > 3, inside the same transaction as the INSERT.
 // Example trace: consumer rates 4/5 → INSERT rating, cook.points += 1 (bonus).
 //                consumer rates 2/5 → INSERT rating, no bonus.
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, asyncHandler(async (req, res) => {
   const { request_id, score } = req.body;
   if (!request_id || !score) return res.status(400).json({ error: 'Λείπουν πεδία' });
   const s = parseInt(score, 10);
@@ -38,10 +39,10 @@ router.post('/', authenticate, async (req, res) => {
   });
 
   res.status(201).json({ message: 'Αξιολόγηση καταχωρήθηκε', score: s, cookPoints: cook.points });
-});
+}));
 
 // GET /api/ratings/pending — completed requests by consumer with no rating yet
-router.get('/pending', authenticate, async (req, res) => {
+router.get('/pending', authenticate, asyncHandler(async (req, res) => {
   const pending = await db.prepare(`
     SELECT r.id AS request_id, r.created_at, r.pickup_time, l.title AS listing_title, u.username AS cook_username
     FROM requests r
@@ -53,6 +54,6 @@ router.get('/pending', authenticate, async (req, res) => {
     ORDER BY r.created_at DESC
   `).all(req.user.id);
   res.json(pending);
-});
+}));
 
 module.exports = router;

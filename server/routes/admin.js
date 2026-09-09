@@ -1,16 +1,18 @@
 const express = require('express');
 const db = require('../db');
 const { authenticate, requireRole } = require('../middleware/auth');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 router.use(authenticate, requireRole('admin'));
 
-router.get('/stats', async (req, res) => {
+router.get('/stats', asyncHandler(async (req, res) => {
   const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().replace('T', ' ').slice(0, 19);
   const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString().replace('T', ' ').slice(0, 19);
 
+  // "Shared" means actually picked up (pickup_time), not merely requested (created_at).
   const [statsMonth, statsListings, statsUsers] = await Promise.all([
-    db.prepare(`SELECT COUNT(*)::int AS total_portions_month FROM requests WHERE status = 'completed' AND created_at > ?`).get(monthAgo),
+    db.prepare(`SELECT COUNT(*)::int AS total_portions_month FROM requests WHERE status = 'completed' AND pickup_time > ?`).get(monthAgo),
     db.prepare(`SELECT COUNT(*)::int AS active_listings FROM listings WHERE created_at > ? AND portions_available > 0`).get(cutoff),
     db.prepare(`SELECT COUNT(*)::int AS total_users FROM users WHERE role != 'admin'`).get()
   ]);
@@ -20,9 +22,9 @@ router.get('/stats', async (req, res) => {
     active_listings: statsListings.active_listings,
     total_users: statsUsers.total_users
   });
-});
+}));
 
-router.get('/leaderboard', async (req, res) => {
+router.get('/leaderboard', asyncHandler(async (req, res) => {
   const [top_donor, top_rated_listings] = await Promise.all([
     db.prepare(`
       SELECT u.username, COUNT(r.id)::int AS count
@@ -50,9 +52,9 @@ router.get('/leaderboard', async (req, res) => {
   ]);
 
   res.json({ top_donor: top_donor || null, top_rated_listings });
-});
+}));
 
-router.get('/users', async (req, res) => {
+router.get('/users', asyncHandler(async (req, res) => {
   const users = await db.prepare(`
     SELECT id, username, email, role, points, created_at
     FROM users
@@ -60,6 +62,6 @@ router.get('/users', async (req, res) => {
     ORDER BY created_at DESC
   `).all();
   res.json(users);
-});
+}));
 
 module.exports = router;

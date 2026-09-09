@@ -32,8 +32,8 @@ const insertListing = db.prepare(
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 const insertRequest = db.prepare(
-  `INSERT INTO requests (listing_id, consumer_id, status, rating_penalty_applied, created_at)
-   VALUES (?, ?, ?, ?, ?)`
+  `INSERT INTO requests (listing_id, consumer_id, status, rating_penalty_applied, created_at, pickup_time)
+   VALUES (?, ?, ?, ?, ?, ?)`
 );
 const insertRating = db.prepare(
   `INSERT INTO ratings (request_id, score, created_at) VALUES (?, ?, ?)`
@@ -111,20 +111,22 @@ const l8 = insertListing.run(
 console.log('✓ Listings inserted');
 
 // ── Requests ──────────────────────────────────────────────────────────────────
-const r1 = insertRequest.run(l1, anna,   'completed', 1, fresh(24)).lastInsertRowid;
-const r2 = insertRequest.run(l1, kostas, 'approved',  0, fresh(2)).lastInsertRowid;
-const r3 = insertRequest.run(l2, eleni,  'completed', 0, fresh(30)).lastInsertRowid;
-const r4 = insertRequest.run(l2, anna,   'rejected',  0, fresh(25)).lastInsertRowid;
-const r5 = insertRequest.run(l3, kostas, 'pending',   0, fresh(1)).lastInsertRowid;
-const r6 = insertRequest.run(l4, eleni,  'completed', 0, fresh(4)).lastInsertRowid;
-const r7 = insertRequest.run(l4, anna,   'no_show',   0, fresh(6)).lastInsertRowid;
-const r8 = insertRequest.run(l5, kostas, 'completed', 0, fresh(12)).lastInsertRowid;
-const r9 = insertRequest.run(l6, eleni,  'approved',  0, fresh(18)).lastInsertRowid;
+// pickup_time is only set for 'completed' requests (mirrors what PUT /:id/complete does);
+// for penalty_applied=1 rows it must be >48h in the past to justify the flag.
+const r1 = insertRequest.run(l1, anna,   'completed', 1, fresh(24), fresh(50)).lastInsertRowid;
+const r2 = insertRequest.run(l1, kostas, 'approved',  0, fresh(2), null).lastInsertRowid;
+const r3 = insertRequest.run(l2, eleni,  'completed', 0, fresh(30), fresh(29)).lastInsertRowid;
+const r4 = insertRequest.run(l2, anna,   'rejected',  0, fresh(25), null).lastInsertRowid;
+const r5 = insertRequest.run(l3, kostas, 'pending',   0, fresh(1), null).lastInsertRowid;
+const r6 = insertRequest.run(l4, eleni,  'completed', 0, fresh(4), fresh(3.5)).lastInsertRowid;
+const r7 = insertRequest.run(l4, anna,   'no_show',   0, fresh(6), null).lastInsertRowid;
+const r8 = insertRequest.run(l5, kostas, 'completed', 0, fresh(12), fresh(11)).lastInsertRowid;
+const r9 = insertRequest.run(l6, eleni,  'approved',  0, fresh(18), null).lastInsertRowid;
 
 // Requests για ληγμένες αγγελίες
-const r10 = insertRequest.run(l7, anna,   'completed', 1, expired(55)).lastInsertRowid;
-const r11 = insertRequest.run(l7, kostas, 'completed', 1, expired(54)).lastInsertRowid;
-const r12 = insertRequest.run(l8, eleni,  'completed', 0, expired(68)).lastInsertRowid;
+const r10 = insertRequest.run(l7, anna,   'completed', 1, expired(55), expired(53)).lastInsertRowid;
+const r11 = insertRequest.run(l7, kostas, 'completed', 1, expired(54), expired(52)).lastInsertRowid;
+const r12 = insertRequest.run(l8, eleni,  'completed', 0, expired(68), expired(10)).lastInsertRowid;
 
 console.log('✓ Requests inserted');
 
