@@ -42,8 +42,9 @@ async function applyRatingPenalties(consumerId) {
 }
 
 // POST /api/requests — consumer reserves a portion
-// Requires ≥ 1 point to reserve (reputation gate). Points are NOT deducted on reservation.
-// Points are only lost as penalties (no-show, no-rating within 48h).
+// Costs 1 point immediately (held). Refunded in full if the cook rejects it;
+// kept permanently if approved — this is how a consumer "spends" credits to
+// receive a portion, mirroring the cook earning credits by giving one.
 router.post('/', authenticate, asyncHandler(async (req, res) => {
   const { listing_id } = req.body;
   if (!listing_id) return res.status(400).json({ error: 'Λείπει το listing_id' });
@@ -72,9 +73,12 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   ).get(listing_id, req.user.id);
   if (existing) return res.status(400).json({ error: 'Έχεις ήδη κάνει αίτημα για αυτή την αγγελία' });
 
-  const result = await db.prepare(
-    'INSERT INTO requests (listing_id, consumer_id, status) VALUES (?, ?, ?)'
-  ).run(listing_id, req.user.id, 'pending');
+  const result = await db.transaction(async (tx) => {
+    await tx.prepare('UPDATE users SET points = points - 1 WHERE id = ?').run(req.user.id);
+    return tx.prepare(
+      'INSERT INTO requests (listing_id, consumer_id, status) VALUES (?, ?, ?)'
+    ).run(listing_id, req.user.id, 'pending');
+  });
 
   const request = await db.prepare('SELECT * FROM requests WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(request);
@@ -130,7 +134,7 @@ router.put('/:id/approve', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/requests/:id/reject
-// No point refund — reservation never cost a point in the first place.
+// Refunds the point the consumer paid at reservation time — the portion was never given.
 router.put('/:id/reject', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id
@@ -141,7 +145,10 @@ router.put('/:id/reject', authenticate, asyncHandler(async (req, res) => {
   if (request.cook_id !== req.user.id) return res.status(403).json({ error: 'Δεν έχεις δικαίωμα' });
   if (request.status !== 'pending') return res.status(400).json({ error: 'Το αίτημα δεν είναι σε αναμονή' });
 
-  await db.prepare('UPDATE requests SET status = ? WHERE id = ?').run('rejected', request.id);
+  await db.transaction(async (tx) => {
+    await tx.prepare('UPDATE requests SET status = ? WHERE id = ?').run('rejected', request.id);
+    await tx.prepare('UPDATE users SET points = points + 1 WHERE id = ?').run(request.consumer_id);
+  });
   res.json({ message: 'Απόρριψη αιτήματος' });
 }));
 
