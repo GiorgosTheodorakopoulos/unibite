@@ -12,10 +12,8 @@ function computeStatus(listing) {
   return listing.portions_available > 0 ? 'active' : 'inactive';
 }
 
-// Checks for completed requests where the consumer never rated within 48h of pickup.
-// Uses pickup_time (set when cook marks complete) — not created_at.
-// Idempotent: rating_penalty_applied flag prevents double-deduction.
-// Example: request completed at T, consumer hasn't rated by T+48h → deduct 1 point, set flag.
+// Deducts a point for completed requests left unrated 48h after pickup_time.
+// rating_penalty_applied guards against double-deduction.
 async function applyRatingPenalties(consumerId) {
   const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
   const unrated = await db.prepare(`
@@ -30,7 +28,7 @@ async function applyRatingPenalties(consumerId) {
 
   for (const r of unrated) {
     await db.transaction(async (tx) => {
-      // Atomic check-and-set: if another concurrent request already set the flag, rowCount = 0 and we skip.
+      // rowCount = 0 if a concurrent call already set the flag.
       const result = await tx.prepare(
         'UPDATE requests SET rating_penalty_applied = 1 WHERE id = ? AND rating_penalty_applied = 0'
       ).run(r.id);
@@ -42,9 +40,7 @@ async function applyRatingPenalties(consumerId) {
 }
 
 // POST /api/requests — consumer reserves a portion
-// Costs 1 point immediately (held). Refunded in full if the cook rejects it;
-// kept permanently if approved — this is how a consumer "spends" credits to
-// receive a portion, mirroring the cook earning credits by giving one.
+// Costs 1 point immediately; refunded if rejected, kept if approved.
 router.post('/', authenticate, asyncHandler(async (req, res) => {
   const { listing_id } = req.body;
   if (!listing_id) return res.status(400).json({ error: 'Λείπει το listing_id' });
@@ -153,10 +149,7 @@ router.put('/:id/reject', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/requests/:id/complete — cook marks portion as picked up
-// Sets pickup_time (starts the 48h rating window).
-// +1 point to cook atomically with the status update.
-// Example trace: cook completes request 7 → DB transaction: status='completed', pickup_time=NOW(),
-//   cook.points += 1. Response includes cookPoints for immediate UI update.
+// Sets pickup_time (starts the 48h rating window) and awards the cook 1 point.
 router.put('/:id/complete', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id
@@ -179,9 +172,7 @@ router.put('/:id/complete', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/requests/:id/no_show — cook marks consumer as no-show
-// -1 point from consumer (floor 0) atomically. Restores the portion.
-// Example trace: consumer 12 no-shows request 5 → DB transaction: status='no_show',
-//   consumer.points = GREATEST(0, points-1), listing.portions_available += 1.
+// -1 point from consumer (floor 0) and restores the portion.
 router.put('/:id/no_show', authenticate, asyncHandler(async (req, res) => {
   const request = await db.prepare(`
     SELECT r.*, l.user_id AS cook_id

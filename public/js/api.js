@@ -32,28 +32,28 @@ const API = {
 };
 
 const ALLERGENS = {
-  gluten:      { label: 'Γλουτένη',     icon: '🌾' },
-  crustaceans: { label: 'Καρκινοειδή',  icon: '🦐' },
-  eggs:        { label: 'Αυγά',          icon: '🥚' },
-  fish:        { label: 'Ψάρι',          icon: '🐟' },
-  peanuts:     { label: 'Φιστίκια',      icon: '🥜' },
-  soybeans:    { label: 'Σόγια',         icon: '🫘' },
-  milk:        { label: 'Γάλα',          icon: '🥛' },
-  nuts:        { label: 'Ξηροί Καρποί', icon: '🌰' },
-  celery:      { label: 'Σέλινο',        icon: '🥬' },
-  mustard:     { label: 'Μουστάρδα',    icon: '🌿' },
-  sesame:      { label: 'Σουσάμι',      icon: '🌱' },
-  sulphites:   { label: 'Θειώδη',       icon: '🍷' },
-  lupin:       { label: 'Λούπινο',      icon: '🌼' },
-  molluscs:    { label: 'Μαλάκια',      icon: '🐙' }
+  gluten:      { label: 'Γλουτένη' },
+  crustaceans: { label: 'Καρκινοειδή' },
+  eggs:        { label: 'Αυγά' },
+  fish:        { label: 'Ψάρι' },
+  peanuts:     { label: 'Φιστίκια' },
+  soybeans:    { label: 'Σόγια' },
+  milk:        { label: 'Γάλα' },
+  nuts:        { label: 'Ξηροί Καρποί' },
+  celery:      { label: 'Σέλινο' },
+  mustard:     { label: 'Μουστάρδα' },
+  sesame:      { label: 'Σουσάμι' },
+  sulphites:   { label: 'Θειώδη' },
+  lupin:       { label: 'Λούπινο' },
+  molluscs:    { label: 'Μαλάκια' }
 };
 
 function allergenTags(allergens) {
   if (!allergens || allergens.length === 0)
     return '<span class="no-allergens">Χωρίς δηλωμένα αλλεργιογόνα</span>';
   return allergens.map(a => {
-    const info = ALLERGENS[a] || { label: a, icon: '⚠️' };
-    return `<span class="allergen-tag">${info.icon} ${info.label}</span>`;
+    const info = ALLERGENS[a] || { label: a };
+    return `<span class="allergen-tag">${info.label}</span>`;
   }).join('');
 }
 
@@ -98,7 +98,7 @@ function renderNavbar(activePage) {
     if (user.role === 'admin') {
       links += `<a href="/admin.html" ${activePage === 'admin' ? 'class="active"' : ''}>Admin</a>`;
     }
-    links += `<span class="points-badge">⭐ ${user.points}</span>`;
+    links += `<span class="points-badge">${user.points} πόντοι</span>`;
     links += `<a href="#" id="logoutBtn">Έξοδος</a>`;
   } else {
     links += `<a href="/login.html" ${activePage === 'login' ? 'class="active"' : ''}>Σύνδεση</a>`;
@@ -106,8 +106,8 @@ function renderNavbar(activePage) {
   }
   nav.innerHTML = `
     <div class="nav-inner">
-      <a href="/index.html" class="nav-logo">🍽️ UniBite</a>
-      <button class="nav-hamburger" id="navToggle" aria-label="Menu">☰</button>
+      <a href="/index.html" class="nav-logo">UniBite</a>
+      <button class="nav-hamburger" id="navToggle" aria-label="Menu">Menu</button>
       <div class="nav-links" id="navLinks">${links}</div>
     </div>`;
   document.getElementById('logoutBtn')?.addEventListener('click', e => {

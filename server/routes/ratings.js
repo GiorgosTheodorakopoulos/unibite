@@ -6,9 +6,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const router = express.Router();
 
 // POST /api/ratings — consumer rates a completed (picked-up) request
-// +1 bonus point to cook if score > 3, inside the same transaction as the INSERT.
-// Example trace: consumer rates 4/5 → INSERT rating, cook.points += 1 (bonus).
-//                consumer rates 2/5 → INSERT rating, no bonus.
+// +1 bonus point to the cook if score > 3.
 router.post('/', authenticate, asyncHandler(async (req, res) => {
   const { request_id, score } = req.body;
   if (!request_id || !score) return res.status(400).json({ error: 'Λείπουν πεδία' });

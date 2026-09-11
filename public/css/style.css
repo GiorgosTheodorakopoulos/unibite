@@ -252,7 +252,6 @@ textarea.form-control { resize: vertical; }
   padding: 3rem 1rem;
   color: var(--text-muted);
 }
-.empty-state .empty-icon { font-size: 3rem; margin-bottom: .5rem; }
 
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }

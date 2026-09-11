@@ -8,7 +8,6 @@
   <style>
     .auth-wrap { display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 60px); padding:2rem 1rem; }
     .auth-card { width:100%; max-width:420px; background:#fff; border-radius:16px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.1); }
-    .auth-logo { text-align:center; font-size:2.5rem; margin-bottom:.25rem; }
     .auth-title { text-align:center; font-size:1.4rem; font-weight:700; color:var(--dark); margin-bottom:1.5rem; }
     .auth-footer { text-align:center; margin-top:1rem; font-size:.88rem; color:var(--text-muted); }
     .auth-footer a { color:var(--primary); text-decoration:none; font-weight:600; }
@@ -16,7 +15,6 @@
     .role-card { border:2px solid var(--border); border-radius:10px; padding:1rem; cursor:pointer; text-align:center; transition:border-color .15s, background .15s; }
     .role-card input[type=radio] { display:none; }
     .role-card:has(input:checked) { border-color:var(--primary); background:#fff8f0; }
-    .role-card .role-icon { font-size:2rem; }
     .role-card .role-name { font-weight:600; margin-top:.3rem; }
   </style>
 </head>
@@ -24,7 +22,6 @@
   <nav id="navbar"></nav>
   <div class="auth-wrap">
     <div class="auth-card">
-      <div class="auth-logo">🍽️</div>
       <h1 class="auth-title">Σύνδεση στο UniBite</h1>
       <form id="loginForm" novalidate autocomplete="off">
         <div class="form-group">
@@ -40,12 +37,10 @@
           <div class="role-options">
             <label class="role-card">
               <input type="radio" name="role" value="consumer" />
-              <div class="role-icon">🍽️</div>
               <div class="role-name">Καταναλωτής</div>
             </label>
             <label class="role-card">
               <input type="radio" name="role" value="cook" />
-              <div class="role-icon">👨‍🍳</div>
               <div class="role-name">Μάγειρας</div>
             </label>
           </div>

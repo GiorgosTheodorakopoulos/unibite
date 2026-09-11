@@ -113,7 +113,7 @@ function renderListings() {
   const user = API.getUser();
 
   if (!items.length) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🍽️</div><p>Δεν βρέθηκαν αγγελίες</p></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Δεν βρέθηκαν αγγελίες</p></div>';
     return;
   }
 
@@ -129,13 +129,13 @@ function listingCardHTML(l, user) {
   const isInactive = l.status === 'inactive';
   const imgContent = l.photo
     ? `<img src="${l.photo}" alt="${l.title}" loading="lazy" />`
-    : `<span>🍽️</span>`;
+    : `<span></span>`;
 
   let distanceTag = '';
   if (userLocation && l.lat && l.lng) {
     const d = haversineKm(userLocation.lat, userLocation.lng, l.lat, l.lng);
     const label = d < 1 ? Math.round(d * 1000) + 'μ' : d.toFixed(1) + 'χλμ';
-    distanceTag = `<span class="distance-tag">📍 ${label}</span>`;
+    distanceTag = `<span class="distance-tag">${label}</span>`;
   }
 
   let actionBtn = '';
@@ -150,9 +150,9 @@ function listingCardHTML(l, user) {
   } else if (isInactive) {
     actionBtn = `<button class="btn btn-secondary btn-sm" disabled>Εξαντλήθηκε</button>`;
   } else if (user.points < 1) {
-    actionBtn = `<button class="btn btn-secondary btn-sm" disabled title="Χρειάζεσαι τουλάχιστον 1 πόντο">🍴 Κράτηση (0 πόντοι)</button>`;
+    actionBtn = `<button class="btn btn-secondary btn-sm" disabled title="Χρειάζεσαι τουλάχιστον 1 πόντο">Κράτηση (0 πόντοι)</button>`;
   } else {
-    actionBtn = `<button class="btn btn-primary btn-sm request-btn" data-id="${l.id}">🍴 Κράτηση</button>`;
+    actionBtn = `<button class="btn btn-primary btn-sm request-btn" data-id="${l.id}">Κράτηση</button>`;
   }
 
   return `
@@ -161,19 +161,19 @@ function listingCardHTML(l, user) {
       <div class="listing-card-body">
         <div class="listing-card-title">${escHtml(l.title)}</div>
         <div class="listing-card-meta">
-          <span>👨‍🍳 ${escHtml(l.cook_username)}</span>
+          <span>${escHtml(l.cook_username)}</span>
           <span class="badge badge-${l.status}">${l.status === 'active' ? 'Διαθέσιμο' : 'Εξαντλήθηκε'}</span>
         </div>
         <div class="listing-card-meta">
-          <span>📍 ${escHtml(l.location)}</span>
-          <span>🕐 ${l.pickup_time}</span>
+          <span>${escHtml(l.location)}</span>
+          <span>${l.pickup_time}</span>
           ${distanceTag}
         </div>
         ${l.notes ? `<div style="font-size:.82rem;color:var(--text-muted)">${escHtml(l.notes).slice(0,80)}${l.notes.length>80?'…':''}</div>` : ''}
         <div class="listing-card-allergens">${allergenTags(l.allergens)}</div>
       </div>
       <div class="listing-card-footer">
-        <span class="portions-badge">🍛 ${l.portions_available} μερίδες</span>
+        <span class="portions-badge">${l.portions_available} μερίδες</span>
         ${actionBtn}
       </div>
     </div>`;
@@ -184,7 +184,7 @@ async function requestPortion(listingId, btn) {
   try {
     await API.post('/api/requests', { listing_id: parseInt(listingId) });
     showToast('Το αίτημά σου στάλθηκε!', 'success');
-    btn.textContent = 'Στάλθηκε ✓';
+    btn.textContent = 'Στάλθηκε';
     btn.classList.replace('btn-primary', 'btn-success');
     // Update local points
     const me = await API.get('/api/auth/me');
@@ -192,7 +192,7 @@ async function requestPortion(listingId, btn) {
     renderNavbar('feed');
   } catch(err) {
     showToast(err.message, 'error');
-    btn.disabled = false; btn.textContent = '🍴 Κράτηση';
+    btn.disabled = false; btn.textContent = 'Κράτηση';
   }
 }
 
@@ -200,17 +200,17 @@ function locateUser() {
   const btn = document.getElementById('locateBtn');
   const status = document.getElementById('locStatus');
   if (!navigator.geolocation) {
-    status.textContent = '✗ Δεν υποστηρίζεται';
+    status.textContent = 'Δεν υποστηρίζεται';
     return;
   }
   btn.disabled = true;
-  status.textContent = '⏳ Εντοπισμός...';
+  status.textContent = 'Εντοπισμός...';
   navigator.geolocation.getCurrentPosition(
     pos => {
       userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       btn.disabled = false;
-      btn.textContent = '📍 Ενημέρωση';
-      status.textContent = '✓ Εντοπίστηκε';
+      btn.textContent = 'Ενημέρωση';
+      status.textContent = 'Εντοπίστηκε';
       status.classList.add('loc-ok');
       document.getElementById('maxDistSelect').disabled = false;
       document.getElementById('sortSelect').value = 'distance';
@@ -222,7 +222,7 @@ function locateUser() {
     },
     () => {
       btn.disabled = false;
-      status.textContent = '✗ Δεν επιτράπηκε';
+      status.textContent = 'Δεν επιτράπηκε';
       status.classList.remove('loc-ok');
     },
     { timeout: 10000 }
@@ -252,7 +252,7 @@ function renderMapMarkers() {
         html: `<div style="background:#2563eb;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
         iconSize: [14, 14], iconAnchor: [7, 7]
       })
-    }).addTo(map).bindPopup('📍 Η τοποθεσία σου');
+    }).addTo(map).bindPopup('Η τοποθεσία σου');
     if (maxDist) {
       userCircle = L.circle([userLocation.lat, userLocation.lng], {
         radius: maxDist * 1000,
@@ -269,22 +269,22 @@ function renderMapMarkers() {
     const color = l.status === 'active' ? '#e67e22' : '#999';
     const icon = L.divIcon({
       className: '',
-      html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 6px rgba(0,0,0,.3)">🍽️</div>`,
+      html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>`,
       iconSize: [32, 32], iconAnchor: [16, 16]
     });
 
     let btnHtml = '';
     if (user && user.role === 'consumer' && l.user_id !== user.id && l.status === 'active') {
-      btnHtml = `<button class="popup-btn" onclick="requestFromMap(${l.id}, this)">🍴 Κράτηση Μερίδας</button>`;
+      btnHtml = `<button class="popup-btn" onclick="requestFromMap(${l.id}, this)">Κράτηση Μερίδας</button>`;
     }
 
     const marker = L.marker([l.lat, l.lng], { icon }).addTo(map);
     marker.bindPopup(`
       <div class="popup-title">${escHtml(l.title)}</div>
-      <div>👨‍🍳 ${escHtml(l.cook_username)}</div>
-      <div>🍛 ${l.portions_available} μερίδες</div>
-      <div>📍 ${escHtml(l.location)}</div>
-      <div>🕐 ${l.pickup_time}</div>
+      <div>${escHtml(l.cook_username)}</div>
+      <div>${l.portions_available} μερίδες</div>
+      <div>${escHtml(l.location)}</div>
+      <div>${l.pickup_time}</div>
       ${allergenTags(l.allergens)}
       ${btnHtml}
     `);
@@ -297,13 +297,13 @@ async function requestFromMap(listingId, btn) {
   try {
     await API.post('/api/requests', { listing_id: listingId });
     showToast('Αίτημα στάλθηκε!', 'success');
-    btn.textContent = 'Στάλθηκε ✓';
+    btn.textContent = 'Στάλθηκε';
     const me = await API.get('/api/auth/me');
     API.setAuth(API.getToken(), me);
     renderNavbar('feed');
   } catch(err) {
     showToast(err.message, 'error');
-    btn.disabled = false; btn.textContent = '🍴 Κράτηση Μερίδας';
+    btn.disabled = false; btn.textContent = 'Κράτηση Μερίδας';
   }
 }
 

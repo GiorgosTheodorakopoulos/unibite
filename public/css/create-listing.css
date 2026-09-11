@@ -70,7 +70,6 @@
   flex-shrink: 0;
   cursor: pointer;
 }
-.allergen-icon { font-size: 1.25rem; flex-shrink: 0; }
 .allergen-name {
   font-size: .8rem;
   line-height: 1.3;

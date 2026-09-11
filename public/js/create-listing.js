@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('lat').value = lat.toFixed(6);
     document.getElementById('lng').value = lng.toFixed(6);
     document.getElementById('coordsLabel').textContent =
-      `📍 Επιλέχθηκε: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      `Επιλέχθηκε: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     if (locationMarker) locationMarker.setLatLng(e.latlng);
     else locationMarker = L.marker(e.latlng, { draggable: true }).addTo(locationMap);
     locationMarker.on('dragend', ev => {
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('lat').value = p.lat.toFixed(6);
       document.getElementById('lng').value = p.lng.toFixed(6);
       document.getElementById('coordsLabel').textContent =
-        `📍 Επιλέχθηκε: ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+        `Επιλέχθηκε: ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
     });
   });
 
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => window.location.href = '/my-dashboard.html', 1200);
     } catch(err) {
       showToast(err.message, 'error');
-      btn.disabled = false; btn.textContent = '🚀 Δημοσίευση Αγγελίας';
+      btn.disabled = false; btn.textContent = 'Δημοσίευση Αγγελίας';
     }
   });
 });

@@ -55,7 +55,7 @@ async function loadMyListings() {
   try {
     const listings = await API.get('/api/listings/mine/all');
     if (!listings.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div><p>Δεν έχεις αγγελίες ακόμα.</p></div>';
+      el.innerHTML = '<div class="empty-state"><p>Δεν έχεις αγγελίες ακόμα.</p></div>';
       return;
     }
     el.innerHTML = listings.map(l => `
@@ -63,16 +63,16 @@ async function loadMyListings() {
         <div class="my-listing-info">
           <div class="my-listing-title">${escHtml(l.title)}</div>
           <div class="my-listing-meta">
-            🍛 ${l.portions_available}/${l.portions_total} μερίδες &nbsp;|&nbsp;
-            📍 ${escHtml(l.location)} &nbsp;|&nbsp;
-            🕐 ${l.pickup_time} &nbsp;|&nbsp;
+            ${l.portions_available}/${l.portions_total} μερίδες &nbsp;|&nbsp;
+            ${escHtml(l.location)} &nbsp;|&nbsp;
+            ${l.pickup_time} &nbsp;|&nbsp;
             <span class="badge badge-${l.status}">${statusLabel(l.status)}</span>
           </div>
           <div style="margin-top:.3rem">${allergenTags(l.allergens)}</div>
         </div>
         <div class="my-listing-actions">
-          <button class="btn btn-secondary btn-sm" onclick="openEdit(${l.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id}, this)">🗑️</button>
+          <button class="btn btn-secondary btn-sm" onclick="openEdit(${l.id})">Επεξεργασία</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id}, this)">Διαγραφή</button>
         </div>
       </div>
     `).join('');
@@ -134,7 +134,7 @@ async function loadIncoming() {
   try {
     const requests = await API.get('/api/requests/incoming');
     if (!requests.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📥</div><p>Δεν υπάρχουν αιτήματα.</p></div>';
+      el.innerHTML = '<div class="empty-state"><p>Δεν υπάρχουν αιτήματα.</p></div>';
       return;
     }
     el.innerHTML = `
@@ -162,11 +162,11 @@ async function loadIncoming() {
 
 function incomingActions(r) {
   if (r.status === 'pending') return `
-    <button class="btn btn-success btn-sm" onclick="reqAction(${r.id},'approve',this)">✓ Αποδοχή</button>
-    <button class="btn btn-danger btn-sm" onclick="reqAction(${r.id},'reject',this)">✗ Απόρριψη</button>`;
+    <button class="btn btn-success btn-sm" onclick="reqAction(${r.id},'approve',this)">Αποδοχή</button>
+    <button class="btn btn-danger btn-sm" onclick="reqAction(${r.id},'reject',this)">Απόρριψη</button>`;
   if (r.status === 'approved') return `
-    <button class="btn btn-primary btn-sm" onclick="reqAction(${r.id},'complete',this)">📦 Παρελήφθη</button>
-    <button class="btn btn-warning btn-sm" onclick="reqAction(${r.id},'no_show',this)">❌ No-show</button>`;
+    <button class="btn btn-primary btn-sm" onclick="reqAction(${r.id},'complete',this)">Παρελήφθη</button>
+    <button class="btn btn-warning btn-sm" onclick="reqAction(${r.id},'no_show',this)">No-show</button>`;
   return `<span class="hint">${statusLabel(r.status)}</span>`;
 }
 
@@ -190,7 +190,7 @@ async function loadMyRequests() {
     const reqs = await API.get('/api/requests/my');
     loadPoints(); // Penalties may have been applied server-side; refresh displayed balance.
     if (!reqs.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽️</div><p>Δεν έχεις αιτήματα ακόμα.</p></div>';
+      el.innerHTML = '<div class="empty-state"><p>Δεν έχεις αιτήματα ακόμα.</p></div>';
       return;
     }
     el.innerHTML = `
@@ -217,19 +217,19 @@ async function loadPendingRatings() {
   try {
     const pending = await API.get('/api/ratings/pending');
     if (!pending.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">⭐</div><p>Δεν υπάρχουν εκκρεμείς αξιολογήσεις.</p></div>';
+      el.innerHTML = '<div class="empty-state"><p>Δεν υπάρχουν εκκρεμείς αξιολογήσεις.</p></div>';
       return;
     }
     el.innerHTML = pending.map(r => {
-      const deadline = new Date(r.created_at).getTime() + 48 * 3600 * 1000;
+      const deadline = new Date(r.pickup_time).getTime() + 48 * 3600 * 1000;
       const msLeft = deadline - Date.now();
       const hLeft = Math.max(0, Math.floor(msLeft / 3600000));
       const mLeft = Math.max(0, Math.floor((msLeft % 3600000) / 60000));
       const urgentClass = hLeft < 6 ? 'style="color:var(--danger);font-weight:600"' : 'style="color:var(--text-muted)"';
-      const countdown = `<small ${urgentClass}>⏱ ${hLeft}ω ${mLeft}λ απομένουν</small>`;
+      const countdown = `<small ${urgentClass}>${hLeft}ω ${mLeft}λ απομένουν</small>`;
       return `
         <div class="rating-item" id="rating-item-${r.request_id}">
-          <h3>🍽️ ${escHtml(r.listing_title)} <span class="hint">από ${escHtml(r.cook_username)}</span></h3>
+          <h3>${escHtml(r.listing_title)} <span class="hint">από ${escHtml(r.cook_username)}</span></h3>
           <div>${countdown}</div>
           <div class="star-widget" data-req="${r.request_id}">
             ${[1,2,3,4,5].map(i => `<span class="star" data-val="${i}">★</span>`).join('')}
